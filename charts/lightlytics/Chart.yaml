@@ -1,74 +1,24 @@
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: {{ template "lightlytics.fullname" . }}
-  namespace: {{ .Release.Namespace }}
-  labels:
-  {{- include "lightlytics.labels" . | nindent 4 }}
-spec:
-  replicas: {{ .Values.lightlytics.replicas }}
-  selector:
-    matchLabels:
-  {{- include "lightlytics.selectorLabels" . | nindent 6 }}
-  template:
-    metadata:
-      labels:
-    {{- include "lightlytics.selectorLabels" . | nindent 8 }}
-    spec:
-      serviceAccountName: {{ template "lightlytics.serviceAccountName" . }}
-      securityContext:
-        runAsUser: 1000
-        runAsGroup: 3000
-        fsGroup: 2000
-      containers:
-        - name: lightlytics-agent
-          image: {{ template "lightlytics.image-path" . }}
-          imagePullPolicy: {{ .Values.lightlytics.image.pullPolicy }}
-          resources:
-{{ toYaml .Values.lightlytics.resources | indent 12 }}
-          securityContext:: true
-              readOnlyRootFilesystem: true
-              allowPrivilegeEscalation: false
-              capabilities:
-                 drop:
-                    - all
-                 add:
-                    - NET_BIND_SERVICE
-          readinessProbe:
-             tcpSocket:
-                port: {{ .Values.lightlytics.port | quote }}
-             initialDelaySeconds: 5
-             periodSeconds: 10
-          livenessProbe:
-             tcpSocket:
-                port: {{ .Values.lightlytics.port | quote }}
-             initialDelaySeconds: 15
-             periodSeconds: 20
-          env:
-            - name: LIGHTLYTICS_API_TOKEN
-              valueFrom:
-                secretKeyRef:
-                  name: {{ template "lightlytics.fullname" . }}
-                  key: api-key
-            - name: LIGHTLYTICS_API_URL
-              value: {{ .Values.lightlytics.apiUrl | quote }}
+apiVersion: v2
+name: lightlytics
 
-            - name: FULL_SCAN_SCHEDULE_SECONDS
-              value: {{ .Values.lightlytics.fullScanScheduleSeconds | quote }}
+description: A Helm chart for Lightlytics Kubernetes agent
 
-            - name: FILTER_RUNNING_PODS
-              value: {{ .Values.lightlytics.filterRunningPods | quote }}
+# A chart can be either an 'application' or a 'library' chart.
+#
+# Application charts are a collection of templates that can be packaged into versioned archives
+# to be deployed.
+#
+# Library charts provide useful utilities or functions for the chart developer. They're included as
+# a dependency of application charts to inject those utilities and functions into the rendering
+# pipeline. Library charts do not define any templates and therefore cannot be deployed.
+type: application
 
-            - name: FIELD_SELECTORS_NAMESPACES
-              value: {{ .Values.lightlytics.fieldSelectorsNamespaces | quote }}
-              
-            - name: WORKFLOW
-              value: {{ .Values.lightlytics.workflow | quote }}
-              
-            - name: PORT
-              value: {{ .Values.lightlytics.port | quote }}
-              
-            {{- range $envVarName, $envVarValue := $.Values.lightlytics.env }}
-            - name: {{ $envVarName }}
-              value: {{ $envVarValue | quote }}
-            {{- end }}
+# This is the chart version. This version number should be incremented each time you make changes
+# to the chart and its templates, including the app version.
+# Versions are expected to follow Semantic Versioning (https://semver.org/)
+version: 0.1.2
+
+# This is the version number of the application being deployed. This version number should be
+# incremented each time you make changes to the application. Versions are not expected to
+# follow Semantic Versioning. They should reflect the version the application is using.
+appVersion: 1.16.0
